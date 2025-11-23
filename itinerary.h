@@ -8,13 +8,15 @@
 #define MAX_LEN 100
 #define FILE_NAME "itineraries.txt"
 
-// CLI Colors (ANSI)
+// ================= VIBRANT COLORS =================
 #define RESET   "\033[0m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define CYAN    "\033[36m"
-#define BOLD    "\033[1m"
+#define RED     "\033[1;31m"      // Bright Red
+#define GREEN   "\033[1;32m"      // Bright Green
+#define YELLOW  "\033[1;33m"      // Bright Yellow
+#define BLUE    "\033[1;34m"      // Bright Blue
+#define MAGENTA "\033[1;35m"      // Bright Magenta
+#define CYAN    "\033[1;36m"      // Bright Cyan
+#define WHITE   "\033[1;37m"      // Bright White
 
 typedef struct {
     char city[MAX_LEN];
@@ -50,11 +52,17 @@ void editItinerary();
 void listFavorites();
 void toggleFavorite();
 void exportItinerary();
+void viewCityStats(); // <--- NEW FEATURE
+void resetAllItineraries(); // <-- NEW
 
 // Helpers
 int safeInt();
 void pauseScreen();
 void clearScreen();
+
+// New input helpers that support "Back"
+int askStringWithBack(const char *prompt, char *out, int maxlen, int *isBack);
+int askIntWithBack(const char *prompt, int *out, int *isBack);
 
 // Validation and date helpers
 int isValidDate(int d, int m, int y);
@@ -67,8 +75,8 @@ int totalCost(Itinerary it);
 double costPerDay(Itinerary it);
 
 // Extra helpers
-const char* tripStatus(Itinerary it); // Upcoming/Ongoing/Completed
-int daysUntilStart(Itinerary it);     // negative if already started
+const char* tripStatus(Itinerary it);
+int daysUntilStart(Itinerary it);
 int isValidCityOrCountry(const char *s);
 int readValidatedCost();
 void showCostChart(Itinerary it);
