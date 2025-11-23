@@ -1,259 +1,143 @@
-# 🌍 Travel Itinerary Planner  
-*A complete CLI-based itinerary management system written entirely in C*
+🌍 Travel Itinerary Planner v2.0
+A highly modular, file-based CLI itinerary management system written in pure C.
 
----
+📌 Overview
+The Travel Itinerary Planner v2.0 is a refactored, robust CLI application. It has been upgraded from a monolithic structure to a modular architecture, separating concerns into logic, storage, utilities, and interface management.
 
-## 📌 Overview
-The **Travel Itinerary Planner** is a modular, file-based CLI application written **100% in C**.
+It allows users to plan trips with granular detail, including stop tracking, budget analytics, date validation, and city statistics, all while adhering to strict C programming constraints.
 
-It allows users to create, edit, delete, view, search, sort, export, and manage travel itineraries with full date validation, cost analytics, favorites, stop tracking, and much more.
+✨ Key Features
+🚀 Core Management
+CRUD Operations: Create, Read, Update, and Delete itineraries.
 
-This project follows strict constraints:
+Smart ID Management: IDs are automatically re-sequenced upon deletion to prevent gaps.
 
-- **Only C language**
-- **Fully CLI-based**
-- **No external libraries**
-- **Only syllabus-approved concepts**
-- **Modular design** (`main.c`, `itinerary.c`, `itinerary.h`)
-- **Simple Makefile-based build system**
+Search & Sort: Search by name (case-insensitive) or sort by Name/ID.
 
----
+Persistent Storage: All data is saved automatically to itineraries.txt.
 
-## ✨ Features
+🧠 Smart Input & Navigation
+"Back" Functionality: Enter B at almost any prompt to go back to the previous step (perfect for correcting mistakes during entry).
 
-### 🧳 Core Features
-- Create new itineraries  
-- View detailed itinerary summary  
-- List all itineraries in a formatted table  
-- Delete itineraries  
-- Edit itineraries (including stops & dates)  
-- Export itineraries to a `.txt` file  
-- **Automatically reassign IDs after deletion (no gaps)**  
-- File storage via `itineraries.txt`  
+Robust Validation:
 
----
+Rejects invalid dates (e.g., Feb 30th, past dates).
 
-### 📅 Date System (Fully Validated)
-- Separate input: `day`, `month`, `year`  
-- Validates:
-  - Correct calendar dates  
-  - Leap years  
-  - Month lengths  
-- Prevents:
-  - Past start dates  
-  - Past end dates  
-  - End date occurring before start  
-- Calculates:
-  - Duration in days  
-  - Day of week for start & end  
-  - Days until start  
-  - Trip status: **Upcoming / Ongoing / Completed**
+Rejects non-numeric costs or invalid city names.
 
----
+📊 Analytics & Stats
+City Statistics: View a generated report of:
 
-### 🛑 Input Validation
-#### ✔ City & Country Validation
-- Must contain at least **one letter**
-- Can only contain:
-  - letters  
-  - spaces  
-  - hyphens  
-  - apostrophes  
-- Rejects:
-  - numbers-only  
-  - invalid symbols (`@`, `%`, `*`, etc.)
+Top cities visited (Past trips).
 
-#### ✔ Cost Validation
-- Integer only  
-- Must be **≥ 0**  
-- Rejects all invalid inputs  
+Upcoming destinations (Future trips).
 
----
+Cost Visualization: ASCII bar charts visualizing cost distribution per stop.
 
-### 🗺️ Stop Management
-Each itinerary supports up to **20 stops**, each storing:
+Trip Status: Automatically tags trips as Upcoming, Ongoing, or Completed.
 
-- City  
-- Country  
-- Cost  
-- Completion flag  
+🛡️ Safety Features
+Reset Protection: The "Reset All" feature requires solving a randomized math problem to prevent accidental deletion.
 
-Features include:
+File Export: Export specific itineraries to individual text files for sharing/printing.
 
-- Add stop  
-- Remove stop  
-- Edit stop  
-- Mark stop completed / not completed  
-- Prevent invalid city/country names  
+📂 Modular Project Structure
+The code is organized into logical modules for better maintainability and readability:
 
----
+Plaintext
 
-### ⭐ Favorites System
-- Mark any itinerary as favorite  
-- Toggle favorite at any time  
-- List only favorite itineraries  
+.
+├── main.c           # Entry point; handles the main menu loop.
+├── common.h         # Shared data structures (structs) and global constants.
+├── manager.c/h      # Business logic (Add, Edit, Delete, Search, List).
+├── storage.c/h      # File I/O operations (Load, Save, Export).
+├── utils.c/h        # Helper functions (Validation, Date Math, Input handling).
+├── Makefile         # Automated build script.
+├── itineraries.txt  # Database file (auto-generated).
+└── README.md        # Documentation.
+⚙️ Compilation & Execution
+Prerequisites
+GCC Compiler
 
----
+Make
 
-### 💰 Cost Analytics
-- Total trip cost  
-- Cost per day  
-- ASCII bar chart showing cost distribution per stop  
+1️⃣ Build the Project
+Run the following command in the terminal:
 
-Example cost chart:
+Bash
 
-```
-Stop 1 (Tokyo):   #######
-Stop 2 (Kyoto):   ####
-Stop 3 (Osaka):   ###
-```
-
----
-
-### 🔍 Search & Sort
-- Case-insensitive name search  
-- Sort itineraries:
-  - By **Name**
-  - By **ID**  
-
----
-
-### 📤 Exporting
-Export any itinerary to:
-
-```
-itinerary_<ID>.txt
-```
-
-The exported file includes all trip details and stops.
-
----
-
-## 📁 Project Structure
-
-```
-project/
-│── main.c
-│── itinerary.c
-│── itinerary.h
-│── Makefile
-│── itineraries.txt   (auto-generated)
-│── README.md
-```
-
----
-
-## ⚙️ Compilation & Execution
-
-### 1️⃣ Build with Makefile
-```bash
 make
-```
+2️⃣ Run the Application
+Bash
 
-This produces an executable named:
+./travel_app
+(Note: On Windows, use travel_app.exe)
 
-```
-itinerary
-```
+3️⃣ Clean Build Files
+To remove object files and the executable:
 
-### 2️⃣ Run the Program
-```bash
-./itinerary
-```
+Bash
 
-### 3️⃣ Clean Object Files
-```bash
 make clean
-```
+📝 Usage Guide
+Date System
+The system uses a custom date engine that calculates:
 
----
+Duration: Total days of the trip.
 
-## 📂 Data Storage Format (itineraries.txt)
+Countdown: Days remaining until the trip starts.
 
-Each itinerary is stored in the following structured format:
+Weekdays: Automatically determines the day of the week (e.g., "Monday").
 
-```
-id
-name
-start_day start_month start_year
-end_day end_month end_year
-stop_count
-city_1
-country_1
-cost_1
-completed_1
+Cost Management
+Total Cost: Sum of all stops.
+
+Daily Average: Calculates Total Cost / Duration.
+
+Visuals:
+
+Plaintext
+
+Stop 1 (Paris):   25.50%  #####
+Stop 2 (London):  74.50%  ###############
+Stop Management
+Each itinerary supports up to 20 stops, tracking:
+
+City & Country
+
+Cost per stop
+
+Completion status (Done/Not Done)
+
+💾 Data Storage Format
+Data is stored in itineraries.txt in a human-readable format. You can backup this file to save your data.
+
+Format Structure:
+
+Plaintext
+
+[ID]
+[Name]
+[Start Date]
+[End Date]
+[Stop Count]
+[Stop 1 City]
+[Stop 1 Country]
+[Stop 1 Cost]
+[Stop 1 Completed]
 ...
-favorite
-```
+[Favorite Flag]
+👨‍💻 Technical Highlights
+This project demonstrates advanced C concepts within academic constraints:
 
-**This file is automatically updated every time you:**
-- Add an itinerary  
-- Edit an itinerary  
-- Delete  
-- Toggle favorite  
-- Sort itineraries  
+Separation of Concerns: Logic is split across manager, storage, and utils.
 
----
+Header Guards: Prevents circular dependency errors.
 
-## 🧪 Functional Testing Scenarios Fully Supported
+Pointers & Memory: Efficient passing of structures by reference.
 
-✔ Create itinerary  
-✔ Validate date  
-✔ Validate city/country  
-✔ Validate cost  
-✔ Edit itinerary name  
-✔ Edit dates  
-✔ Edit stops  
-✔ Delete itinerary  
-✔ Auto-reassign IDs  
-✔ Search  
-✔ Sort  
-✔ Mark favorite  
-✔ List favorites  
-✔ Export itinerary  
-✔ Calculate cost/day  
-✔ Show cost chart  
-✔ Detect trip status  
-✔ Count days until start  
+Preprocessor Macros: Used for cross-platform screen clearing and ANSI colors.
 
-Everything follows strict syllabus guidelines.
+Make Automation: Simplifies the compilation of multiple source files.
 
----
-
-## 👨‍💻 Technical Concepts Used
-
-### Allowed & In-Syllabus:
-- Structures  
-- Arrays  
-- File handling  
-- Modular programming  
-- Header files  
-- Functions  
-- Pointer basics  
-- Input validation  
-- Time/date functions  
-- Makefile  
-- ANSI escape sequences for color  
-
-### Libraries Used:
-- `<stdio.h>`  
-- `<stdlib.h>`  
-- `<string.h>`  
-- `<ctype.h>`  
-- `<time.h>`  
-
----
-
-## 🏁 Final Notes
-
-This project demonstrates:
-
-- Strong understanding of C programming  
-- Clean, modular code  
-- Robust input handling  
-- Real-world travel management logic  
-- File persistence  
-- Professional CLI design  
-- Perfect adherence to academic constraints  
-
-It is fully feature-complete and cleanly implemented.
+Safe Travels! ✈️
