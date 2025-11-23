@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <time.h>
 #include "itinerary.h"
 
 Itinerary itineraries[MAX_ITINERARIES];
@@ -16,7 +17,7 @@ int safeInt() {
         printf(RED "Invalid input. Please enter an integer: " RESET);
         while (getchar() != '\n');
     }
-    while (getchar() != '\n'); 
+    while (getchar() != '\n');
     return x;
 }
 
@@ -33,7 +34,58 @@ void clearScreen() {
 #endif
 }
 
+// ========================= NEW: INPUT HELPERS WITH BACK =====================
+// Returns 1 on success, 0 on parse error. *isBack is set to 1 if user requested back via "B" or "b".
+int askStringWithBack(const char *prompt, char *out, int maxlen, int *isBack) {
+    char buf[512];
+    *isBack = 0;
+    printf("%s (enter 'B' to go back)\n", prompt);
+    if (!fgets(buf, sizeof(buf), stdin)) return 0;
+    // strip newline
+    buf[strcspn(buf, "\n")] = '\0';
+    // check back
+    if ((strlen(buf) == 1) && (buf[0] == 'B' || buf[0] == 'b')) {
+        *isBack = 1;
+        return 1;
+    }
+    // normal copy
+    strncpy(out, buf, maxlen - 1);
+    out[maxlen - 1] = '\0';
+    return 1;
+}
+
+// For numeric input: read a line; if "B" or "b" => isBack=1; else parse integer into *out.
+// Returns 1 if parse succeeded (or back requested), 0 otherwise.
+int askIntWithBack(const char *prompt, int *out, int *isBack) {
+    char buf[128];
+    *isBack = 0;
+    printf("%s (enter 'B' to go back)\n", prompt);
+    if (!fgets(buf, sizeof(buf), stdin)) return 0;
+    buf[strcspn(buf, "\n")] = '\0';
+    if ((strlen(buf) == 1) && (buf[0] == 'B' || buf[0] == 'b')) {
+        *isBack = 1;
+        return 1;
+    }
+    char *endptr;
+    long val = strtol(buf, &endptr, 10);
+    if (endptr == buf || *endptr != '\0') {
+        printf(RED "Invalid integer input.\n" RESET);
+        return 0;
+    }
+    *out = (int)val;
+    return 1;
+}
+
 // ========================= STRING VALIDATION ============================
+
+// Check if string is not empty and has actual content
+int isValidName(const char *s) {
+    int len = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (!isspace((unsigned char)s[i])) len++;
+    }
+    return len > 0;
+}
 
 int isValidCityOrCountry(const char *s) {
     int len = 0;
@@ -54,7 +106,7 @@ int isValidCityOrCountry(const char *s) {
 int readValidatedCost() {
     int c;
     while (1) {
-        printf("Enter cost (integer, >= 0): ");
+        printf(BLUE "Enter cost (integer, >= 0): " RESET);
         c = safeInt();
         if (c < 0) {
             printf(RED "Cost must be non-negative.\n" RESET);
@@ -175,10 +227,11 @@ void showCostChart(Itinerary it) {
     printf(CYAN "\nCost distribution by stop:\n" RESET);
     for (int i = 0; i < it.stop_count; i++) {
         double pct = 100.0 * it.stops[i].cost / total;
-        int bars = (int)(pct / 5.0); 
+        int bars = (int)(pct / 5.0);
         printf("Stop %2d (%s): %6.2f%% ", i+1, it.stops[i].city, pct);
+        printf(MAGENTA); // Bar color
         for (int j = 0; j < bars; j++) printf("#");
-        printf("\n");
+        printf(RESET "\n");
     }
 }
 
@@ -268,73 +321,164 @@ void addItinerary() {
     Itinerary it;
     it.id = next_id++;
 
-    printf("\nEnter itinerary name: ");
-    fgets(it.name, MAX_LEN, stdin);
-    strtok(it.name, "\n");
+    // Step-based input so user can go BACK one step at any time.
+    int step = 1;
+    int current_stop = 0; // for step 5
+    while (step <= 6) {
+        int isBack = 0;
+        char temp[MAX_LEN];
 
-    while (1) {
-        printf("\nEnter start date (dd mm yyyy): ");
-        scanf("%d %d %d", &it.start_day, &it.start_month, &it.start_year);
-        while (getchar() != '\n');
+        if (step == 1) {
+            // Name
+            while (1) {
+                if (!askStringWithBack(BLUE "Enter itinerary name:" RESET, temp, MAX_LEN, &isBack)) {
+                    printf(RED "Input error. Try again.\n" RESET);
+                    continue;
+                }
+                if (isBack) {
+                    // back at step 1 => cancel add
+                    printf(YELLOW "Add cancelled. Returning to main menu.\n" RESET);
+                    next_id--; // undo id allocation
+                    return;
+                }
+                if (isValidName(temp)) {
+                    strcpy(it.name, temp);
+                    break;
+                }
+                printf(RED "Invalid name. Name cannot be empty.\n" RESET);
+            }
+            step++;
+        } else if (step == 2) {
+            // Start date
+            int d,m,y;
+            while (1) {
+                printf(BLUE "Enter start date (dd mm yyyy) (or B to go back): " RESET);
+                char line[128];
+                if (!fgets(line, sizeof(line), stdin)) { printf(RED "Input error.\n" RESET); continue; }
+                line[strcspn(line, "\n")] = '\0';
+                if ((strlen(line) == 1) && (line[0]=='B' || line[0]=='b')) { isBack = 1; break; }
+                if (sscanf(line, "%d %d %d", &d, &m, &y) != 3) { printf(RED "Invalid format. Use: dd mm yyyy\n" RESET); continue; }
+                if (!isValidDate(d,m,y)) { printf(RED "Invalid calendar date.\n" RESET); continue; }
+                if (isPastDate(d,m,y)) { printf(RED "Start date cannot be in the past.\n" RESET); continue; }
+                it.start_day = d; it.start_month = m; it.start_year = y;
+                break;
+            }
+            if (isBack) { step--; continue; }
+            step++;
+        } else if (step == 3) {
+            // End date
+            int d,m,y;
+            while (1) {
+                printf(BLUE "Enter end date (dd mm yyyy) (or B to go back): " RESET);
+                char line[128];
+                if (!fgets(line, sizeof(line), stdin)) { printf(RED "Input error.\n" RESET); continue; }
+                line[strcspn(line, "\n")] = '\0';
+                if ((strlen(line) == 1) && (line[0]=='B' || line[0]=='b')) { isBack = 1; break; }
+                if (sscanf(line, "%d %d %d", &d, &m, &y) != 3) { printf(RED "Invalid format. Use: dd mm yyyy\n" RESET); continue; }
+                if (!isValidDate(d,m,y)) { printf(RED "Invalid calendar date.\n" RESET); continue; }
+                if (isPastDate(d,m,y)) { printf(RED "End date cannot be in the past.\n" RESET); continue; }
+                it.end_day = d; it.end_month = m; it.end_year = y;
+                break;
+            }
+            if (isBack) { step--; continue; }
+            if (tripDuration(it) < 1) { printf(RED "End date cannot be before start date.\n" RESET); return; }
+            step++;
+        } else if (step == 4) {
+            // Number of stops
+            int sc;
+            while (1) {
+                if (!askIntWithBack(BLUE "Number of stops (1-%d):" RESET, &sc, &isBack)) {
+                    printf(RED "Invalid input. Try again.\n" RESET);
+                    continue;
+                }
+                if (isBack) { break; }
+                if (sc < 1) sc = 1;
+                if (sc > MAX_STOPS) sc = MAX_STOPS;
+                it.stop_count = sc;
+                break;
+            }
+            if (isBack) { step--; continue; }
+            step++;
+            current_stop = 0;
+        } else if (step == 5) {
+            // Stops input (iterate stops, each supports back to previous stop)
+            while (current_stop < it.stop_count) {
+                int thisBack = 0;
+                // city
+                while (1) {
+                    char prompt[160];
+                    snprintf(prompt, sizeof(prompt), BLUE "\nStop %d city:" RESET, current_stop + 1);
+                    if (!askStringWithBack(prompt, temp, MAX_LEN, &thisBack)) { printf(RED "Input error.\n" RESET); continue; }
+                    if (thisBack) {
+                        if (current_stop == 0) {
+                            // go back to step 4 (stop count)
+                            step = 4;
+                            break;
+                        } else {
+                            // go back to previous stop
+                            current_stop--;
+                            break;
+                        }
+                    }
+                    if (!isValidCityOrCountry(temp)) { printf(RED "Invalid city name. Try again.\n" RESET); continue; }
+                    strcpy(it.stops[current_stop].city, temp);
+                    break;
+                }
+                if (step != 5) break; // handled back to step
+                if ((int)strlen(it.stops[current_stop].city) == 0) continue; // moved back
 
-        if (!isValidDate(it.start_day, it.start_month, it.start_year))
-            printf(RED "Invalid calendar date.\n" RESET);
-        else if (isPastDate(it.start_day, it.start_month, it.start_year))
-            printf(RED "Start date cannot be in the past.\n" RESET);
-        else
-            break;
-    }
+                // country
+                while (1) {
+                    char prompt[160];
+                    snprintf(prompt, sizeof(prompt), BLUE "Stop %d country:" RESET, current_stop + 1);
+                    if (!askStringWithBack(prompt, temp, MAX_LEN, &thisBack)) { printf(RED "Input error.\n" RESET); continue; }
+                    if (thisBack) { /* go back to city input for this stop */ continue; }
+                    if (!isValidCityOrCountry(temp)) { printf(RED "Invalid country name. Try again.\n" RESET); continue; }
+                    strcpy(it.stops[current_stop].country, temp);
+                    break;
+                }
 
-    while (1) {
-        printf("\nEnter end date (dd mm yyyy): ");
-        scanf("%d %d %d", &it.end_day, &it.end_month, &it.end_year);
-        while (getchar() != '\n');
+                // cost
+                while (1) {
+                    char prompt[160];
+                    snprintf(prompt, sizeof(prompt), BLUE "Stop %d cost (integer >=0):" RESET, current_stop + 1);
+                    int cost;
+                    int costBack = 0;
+                    if (!askIntWithBack(prompt, &cost, &costBack)) { printf(RED "Invalid input.\n" RESET); continue; }
+                    if (costBack) { /* go back to country input */ break; }
+                    if (cost < 0) { printf(RED "Cost must be non-negative.\n" RESET); continue; }
+                    it.stops[current_stop].cost = cost;
+                    it.stops[current_stop].completed = 0;
+                    break;
+                }
 
-        if (!isValidDate(it.end_day, it.end_month, it.end_year))
-            printf(RED "Invalid calendar date.\n" RESET);
-        else if (isPastDate(it.end_day, it.end_month, it.end_year))
-            printf(RED "End date cannot be in the past.\n" RESET);
-        else
-            break;
-    }
+                // If user used back on cost (costBack), we returned to country entry above;
+                // otherwise move to next stop
+                if (strlen(it.stops[current_stop].city) > 0 && strlen(it.stops[current_stop].country) > 0)
+                    current_stop++;
+            }
 
-    if (tripDuration(it) < 1) {
-        printf(RED "End date cannot be before start date.\n" RESET);
-        return;
-    }
-
-    printf("\nNumber of stops (1-%d): ", MAX_STOPS);
-    it.stop_count = safeInt();
-    if (it.stop_count < 1) it.stop_count = 1;
-    if (it.stop_count > MAX_STOPS) it.stop_count = MAX_STOPS;
-
-    for (int i = 0; i < it.stop_count; i++) {
-        while (1) {
-            printf("\nStop %d city: ", i+1);
-            fgets(it.stops[i].city, MAX_LEN, stdin);
-            strtok(it.stops[i].city, "\n");
-            if (!isValidCityOrCountry(it.stops[i].city))
-                printf(RED "Invalid city name. Try again.\n" RESET);
-            else break;
+            if (step != 5) continue; // we jumped back to earlier step
+            // if reached here, all stops entered
+            step++;
+        } else if (step == 6) {
+            // favorite
+            int fav;
+            while (1) {
+                if (!askIntWithBack(BLUE "\nMark as favorite? (1 = yes, 0 = no):" RESET, &fav, &isBack)) {
+                    printf(RED "Invalid input.\n" RESET); continue;
+                }
+                if (isBack) { step--; break; }
+                if (fav != 1) fav = 0;
+                it.favorite = fav;
+                break;
+            }
+            if (isBack) continue;
+            step++;
         }
+    } // end while(steps)
 
-        while (1) {
-            printf("Stop %d country: ", i+1);
-            fgets(it.stops[i].country, MAX_LEN, stdin);
-            strtok(it.stops[i].country, "\n");
-            if (!isValidCityOrCountry(it.stops[i].country))
-                printf(RED "Invalid country name. Try again.\n" RESET);
-            else break;
-        }
-
-        it.stops[i].cost = readValidatedCost();
-        it.stops[i].completed = 0;
-    }
-
-    printf("\nMark as favorite? (1 = yes, 0 = no): ");
-    it.favorite = safeInt();
-    if (it.favorite != 1) it.favorite = 0;
-
+    // finished collecting everything
     itineraries[count++] = it;
     saveData();
 
@@ -348,21 +492,39 @@ void listItineraries() {
         return;
     }
 
-    printf(CYAN BOLD "\n================= All Itineraries =================\n" RESET);
-    printf("| %-4s | %-30s | %-10s | %-9s |\n", "ID", "Name", "Status", "Favorite");
-    printf("-------------------------------------------------------------\n");
+    printf(MAGENTA "\n================= All Itineraries =================\n" RESET);
+    printf(YELLOW "| %-4s | %-30s | %-10s | %-9s |\n" RESET, "ID", "Name", "Status", "Favorite");
+    printf(MAGENTA "-------------------------------------------------------------\n" RESET);
 
     for (int i = 0; i < count; i++) {
-        printf("| %-4d | %-30s | %-10s | %-9s |\n",
+        const char* stat = tripStatus(itineraries[i]);
+        char color[20];
+
+        // Dynamic coloring based on status
+        if (strcmp(stat, "Completed") == 0) strcpy(color, GREEN);
+        else if (strcmp(stat, "Upcoming") == 0) strcpy(color, CYAN);
+        else strcpy(color, YELLOW); // Ongoing
+
+        // ALIGNMENT FIX: Truncate name to 27 chars + "..." if too long
+        char dispName[35];
+        if (strlen(itineraries[i].name) > 30) {
+            strncpy(dispName, itineraries[i].name, 27);
+            dispName[27] = '\0';
+            strcat(dispName, "...");
+        } else {
+            strcpy(dispName, itineraries[i].name);
+        }
+
+        printf("| %-4d | %-30s | %s%-10s" RESET " | %-9s |\n",
                itineraries[i].id,
-               itineraries[i].name,
-               tripStatus(itineraries[i]),
+               dispName, // Use truncated name
+               color, stat,
                itineraries[i].favorite ? "Yes" : "No");
     }
 }
 
 void viewItinerary() {
-    printf("Enter itinerary ID: ");
+    printf(BLUE "Enter itinerary ID: " RESET);
     int id = safeInt();
 
     for (int i = 0; i < count; i++) {
@@ -371,32 +533,32 @@ void viewItinerary() {
             int dur = tripDuration(it);
             int days_start = daysUntilStart(it);
 
-            printf(CYAN BOLD "\n========== ITINERARY DETAILS ==========\n" RESET);
-            printf("ID:        %d\n", it.id);
-            printf("Name:      %s\n", it.name);
-            printf("Start:     %02d-%02d-%04d (%s)\n",
+            printf(CYAN "\n========== ITINERARY DETAILS ==========\n" RESET);
+            printf(WHITE "ID:        " RESET "%d\n", it.id);
+            printf(WHITE "Name:      " RESET "%s\n", it.name);
+            printf(WHITE "Start:     " RESET "%02d-%02d-%04d (%s)\n",
                    it.start_day, it.start_month, it.start_year,
                    weekdayName(it.start_day, it.start_month, it.start_year));
-            printf("End:       %02d-%02d-%04d (%s)\n",
+            printf(WHITE "End:       " RESET "%02d-%02d-%04d (%s)\n",
                    it.end_day, it.end_month, it.end_year,
                    weekdayName(it.end_day, it.end_month, it.end_year));
 
-            printf("Status:    %s\n", tripStatus(it));
+            printf(WHITE "Status:    " RESET "%s\n", tripStatus(it));
             if (days_start > 0)
-                printf("Begins in: %d days\n", days_start);
+                printf(WHITE "Begins in: " RESET "%d days\n", days_start);
             else if (days_start == 0)
-                printf("Begins:    Today\n");
+                printf(WHITE "Begins:    " RESET "Today\n");
 
-            printf("Duration:  %d days\n", dur);
-            printf("Total cost: %d\n", totalCost(it));
-            printf("Cost/day:  %.2f\n", costPerDay(it));
-            printf("Favorite:  %s\n", it.favorite ? "Yes" : "No");
+            printf(WHITE "Duration:  " RESET "%d days\n", dur);
+            printf(WHITE "Total cost:" RESET " %d\n", totalCost(it));
+            printf(WHITE "Cost/day:  " RESET "%.2f\n", costPerDay(it));
+            printf(WHITE "Favorite:  " RESET "%s\n", it.favorite ? "Yes" : "No");
 
-            printf("\nStops:\n");
-            printf("-------------------------------------------------------\n");
-            printf("| %-4s | %-15s | %-15s | %-8s | %-9s |\n",
+            printf(YELLOW "\nStops:\n" RESET);
+            printf(MAGENTA "-------------------------------------------------------\n" RESET);
+            printf(YELLOW "| %-4s | %-15s | %-15s | %-8s | %-9s |\n" RESET,
                    "No.", "City", "Country", "Cost", "Done?");
-            printf("-------------------------------------------------------\n");
+            printf(MAGENTA "-------------------------------------------------------\n" RESET);
 
             for (int j = 0; j < it.stop_count; j++) {
                 printf("| %-4d | %-15s | %-15s | %-8d | %-9s |\n",
@@ -406,7 +568,7 @@ void viewItinerary() {
                        it.stops[j].cost,
                        it.stops[j].completed ? "Yes" : "No");
             }
-            printf("-------------------------------------------------------\n");
+            printf(MAGENTA "-------------------------------------------------------\n" RESET);
 
             showCostChart(it);
             return;
@@ -416,7 +578,7 @@ void viewItinerary() {
 }
 
 void deleteItinerary() {
-    printf("Enter ID to delete: ");
+    printf(BLUE "Enter ID to delete: " RESET);
     int id = safeInt();
 
     int index = -1;
@@ -438,7 +600,7 @@ void deleteItinerary() {
 
     count--;
 
-    // AUTO-REALLOCATE IDs (NEW FEATURE)
+    // AUTO-REALLOCATE IDs
     for (int i = 0; i < count; i++)
         itineraries[i].id = i + 1;
 
@@ -450,7 +612,7 @@ void deleteItinerary() {
 
 void searchItineraries() {
     char key[MAX_LEN];
-    printf("Enter search keyword: ");
+    printf(BLUE "Enter search keyword: " RESET);
     fgets(key, MAX_LEN, stdin);
     strtok(key, "\n");
 
@@ -501,10 +663,10 @@ void sortByID() {
 
 void listFavorites() {
     int found = 0;
-    printf(CYAN "\nFavorite itineraries:\n" RESET);
+    printf(MAGENTA "\nFavorite itineraries:\n" RESET);
     for (int i = 0; i < count; i++) {
         if (itineraries[i].favorite) {
-            printf("%d | %s\n", itineraries[i].id, itineraries[i].name);
+            printf(YELLOW "★ %d | %s\n" RESET, itineraries[i].id, itineraries[i].name);
             found = 1;
         }
     }
@@ -512,7 +674,7 @@ void listFavorites() {
 }
 
 void toggleFavorite() {
-    printf("Enter ID to toggle favorite: ");
+    printf(BLUE "Enter ID to toggle favorite: " RESET);
     int id = safeInt();
 
     for (int i = 0; i < count; i++) {
@@ -527,7 +689,7 @@ void toggleFavorite() {
 }
 
 void exportItinerary() {
-    printf("Enter ID to export: ");
+    printf(BLUE "Enter ID to export: " RESET);
     int id = safeInt();
 
     for (int i = 0; i < count; i++) {
@@ -570,7 +732,7 @@ void exportItinerary() {
 }
 
 void editItinerary() {
-    printf("Enter ID to edit: ");
+    printf(BLUE "Enter ID to edit: " RESET);
     int id = safeInt();
 
     for (int i = 0; i < count; i++) {
@@ -580,16 +742,20 @@ void editItinerary() {
 
             printf(CYAN "\nEditing itinerary: %s\n" RESET, it->name);
 
-            printf("New name (ENTER to keep '%s'): ", it->name);
+            printf(BLUE "New name (ENTER to keep '%s'): " RESET, it->name);
             fgets(temp, MAX_LEN, stdin);
             if (temp[0] != '\n') {
                 strtok(temp, "\n");
-                strcpy(it->name, temp);
+                if (isValidName(temp)) {
+                    strcpy(it->name, temp);
+                } else {
+                    printf(RED "Invalid name ignored. Keeping old name.\n" RESET);
+                }
             }
 
             int d,m,y;
 
-            printf("New start date (dd mm yyyy, 0 0 0 to keep): ");
+            printf(BLUE "New start date (dd mm yyyy, 0 0 0 to keep): " RESET);
             scanf("%d %d %d", &d, &m, &y);
             while (getchar() != '\n');
             if (!(d==0 && m==0 && y==0)) {
@@ -600,7 +766,7 @@ void editItinerary() {
                 it->start_day = d; it->start_month = m; it->start_year = y;
             }
 
-            printf("New end date (dd mm yyyy, 0 0 0 to keep): ");
+            printf(BLUE "New end date (dd mm yyyy, 0 0 0 to keep): " RESET);
             scanf("%d %d %d", &d, &m, &y);
             while (getchar() != '\n');
             if (!(d==0 && m==0 && y==0)) {
@@ -617,13 +783,13 @@ void editItinerary() {
             }
 
             while (1) {
-                printf("\n--- Stop Editor for '%s' ---\n", it->name);
+                printf(CYAN "\n--- Stop Editor for '%s' ---\n" RESET, it->name);
                 printf("1. Edit stop\n");
                 printf("2. Add stop\n");
                 printf("3. Remove stop\n");
                 printf("4. Toggle stop completed\n");
                 printf("0. Done\n");
-                printf("Choice: ");
+                printf(BLUE "Choice: " RESET);
 
                 int choice = safeInt();
                 if (choice == 1) {
@@ -702,4 +868,122 @@ void editItinerary() {
     }
 
     printf(RED "ID not found.\n" RESET);
+}
+
+// ========================= CITY STATS ============================
+
+typedef struct {
+    char name[MAX_LEN];
+    int count;
+} CityStat;
+
+void viewCityStats() {
+    printf(CYAN "\n========== CITY STATISTICS ==========\n" RESET);
+    printf("1. Cities Visited (Past/Completed Trips)\n");
+    printf("2. Future Destinations (Upcoming Trips)\n");
+    printf(BLUE "Choice: " RESET);
+
+    int mode = safeInt();
+    if (mode != 1 && mode != 2) {
+        printf(RED "Invalid mode.\n" RESET);
+        return;
+    }
+
+    CityStat stats[MAX_ITINERARIES * MAX_STOPS];
+    int uniqueCount = 0;
+    int totalStopsFound = 0;
+
+    for (int i = 0; i < count; i++) {
+        const char* status = tripStatus(itineraries[i]);
+        int isMatch = 0;
+
+        if (mode == 1 && strcmp(status, "Completed") == 0) isMatch = 1;
+        if (mode == 2 && strcmp(status, "Upcoming") == 0) isMatch = 1;
+
+        if (isMatch) {
+            for (int j = 0; j < itineraries[i].stop_count; j++) {
+                totalStopsFound++;
+                char currentCity[MAX_LEN];
+                strcpy(currentCity, itineraries[i].stops[j].city);
+
+                char currentLower[MAX_LEN];
+                strcpy(currentLower, currentCity);
+                for(int k=0; currentLower[k]; k++)
+                    currentLower[k] = (char)tolower((unsigned char)currentLower[k]);
+
+                int found = -1;
+                for (int k = 0; k < uniqueCount; k++) {
+                    char storedLower[MAX_LEN];
+                    strcpy(storedLower, stats[k].name);
+                    for(int z=0; storedLower[z]; z++)
+                        storedLower[z] = (char)tolower((unsigned char)storedLower[z]);
+
+                    if (strcmp(currentLower, storedLower) == 0) {
+                        found = k;
+                        break;
+                    }
+                }
+
+                if (found != -1) {
+                    stats[found].count++;
+                } else {
+                    strcpy(stats[uniqueCount].name, currentCity);
+                    stats[uniqueCount].count = 1;
+                    uniqueCount++;
+                }
+            }
+        }
+    }
+
+    if (uniqueCount == 0) {
+        printf(YELLOW "\nNo cities found for this category.\n" RESET);
+        return;
+    }
+
+    // Sort Descending
+    for (int i = 0; i < uniqueCount - 1; i++) {
+        for (int j = i + 1; j < uniqueCount; j++) {
+            if (stats[j].count > stats[i].count) {
+                CityStat temp = stats[i];
+                stats[i] = stats[j];
+                stats[j] = temp;
+            }
+        }
+    }
+
+    if (mode == 1) printf(GREEN "\n=== CITIES VISITED (PAST TRIPS) ===\n" RESET);
+    else printf(CYAN "\n=== FUTURE DESTINATIONS (UPCOMING) ===\n" RESET);
+
+    printf(YELLOW "%-20s | %-10s\n" RESET, "City", "Visits");
+    printf(MAGENTA "--------------------------------\n" RESET);
+    for (int i = 0; i < uniqueCount; i++) {
+        printf("%-20s | %d\n", stats[i].name, stats[i].count);
+    }
+    printf(MAGENTA "--------------------------------\n" RESET);
+    printf(BLUE "Total stops analyzed: %d\n" RESET, totalStopsFound);
+}
+
+// ========================= RESET FEATURE ============================
+
+void resetAllItineraries() {
+    // Simple math question confirmation
+    srand((unsigned int)time(NULL));
+    int a = rand() % 10 + 1;
+    int b = rand() % 10 + 1;
+    int correct = a + b;
+    printf(RED "\nWARNING: This will DELETE ALL itineraries permanently!\n" RESET);
+    printf(YELLOW "To confirm, answer: %d + %d = ? (enter the number): " RESET, a, b);
+    int ans = safeInt();
+    if (ans != correct) {
+        printf(RED "Wrong answer. Reset aborted.\n" RESET);
+        return;
+    }
+
+    // clear memory
+    count = 0;
+    next_id = 1;
+    // remove saved file content
+    FILE *f = fopen(FILE_NAME, "w");
+    if (f) fclose(f);
+    printf(GREEN "✓ All itineraries deleted.\n" RESET);
 }
