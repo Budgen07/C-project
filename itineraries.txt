@@ -1,0 +1,380 @@
+1
+European Backpacking
+10 6 2023
+25 6 2023
+3
+Paris
+France
+500
+1
+Amsterdam
+Netherlands
+450
+1
+Berlin
+Germany
+400
+1
+1
+2
+Japan Cherry Blossom
+01 04 2026
+15 04 2026
+3
+Tokyo
+Japan
+1200
+0
+Kyoto
+Japan
+800
+0
+Osaka
+Japan
+600
+0
+1
+3
+NYC Business Trip
+10 11 2023
+14 11 2023
+1
+New York
+USA
+1500
+1
+0
+4
+Australian Outback
+01 12 2026
+20 12 2026
+2
+Sydney
+Australia
+2000
+0
+Melbourne
+Australia
+1200
+0
+1
+5
+Italian Food Tour
+05 05 2024
+15 05 2024
+3
+Rome
+Italy
+600
+1
+Florence
+Italy
+500
+1
+Naples
+Italy
+400
+1
+1
+6
+Swiss Alps Skiing
+10 01 2025
+17 01 2025
+1
+Zermatt
+Switzerland
+3000
+1
+1
+7
+Tech Conference
+20 09 2024
+23 09 2024
+1
+San Francisco
+USA
+2500
+1
+0
+8
+Bali Relaxation
+15 07 2026
+25 07 2026
+2
+Ubud
+Indonesia
+400
+0
+Kuta
+Indonesia
+350
+0
+1
+9
+London Calling
+01 08 2023
+07 08 2023
+1
+London
+UK
+1200
+1
+0
+10
+South America Trek
+01 03 2027
+20 03 2027
+3
+Lima
+Peru
+800
+0
+Cusco
+Peru
+600
+0
+Santiago
+Chile
+900
+0
+1
+11
+Canadian Rockies
+10 06 2025
+20 06 2025
+2
+Banff
+Canada
+1500
+1
+Vancouver
+Canada
+1200
+1
+1
+12
+Desert Safari
+05 11 2025
+10 11 2025
+1
+Dubai
+UAE
+2000
+0
+0
+13
+Greek Odyssey
+15 09 2023
+25 09 2023
+2
+Athens
+Greece
+700
+1
+Santorini
+Greece
+900
+1
+1
+14
+Iceland Ring Road
+01 10 2026
+10 10 2026
+1
+Reykjavik
+Iceland
+3500
+0
+1
+15
+Seoul Food
+05 05 2027
+12 05 2027
+1
+Seoul
+South Korea
+1100
+0
+1
+16
+Mumbai Visit
+10 12 2023
+15 12 2023
+1
+Mumbai
+India
+300
+1
+0
+17
+Cairo Expedition
+20 02 2026
+28 02 2026
+2
+Cairo
+Egypt
+500
+0
+Luxor
+Egypt
+400
+0
+0
+18
+Thai Beaches
+10 01 2024
+20 01 2024
+2
+Bangkok
+Thailand
+400
+1
+Phuket
+Thailand
+500
+1
+1
+19
+Singapore F1
+18 09 2026
+22 09 2026
+1
+Marina Bay
+Singapore
+2000
+0
+1
+20
+Vietnam Trail
+01 04 2025
+15 04 2025
+3
+Hanoi
+Vietnam
+300
+1
+Da Nang
+Vietnam
+250
+1
+Ho Chi Minh
+Vietnam
+350
+1
+1
+21
+Cape Town Adventure
+01 11 2026
+10 11 2026
+1
+Cape Town
+South Africa
+1400
+0
+1
+22
+Rio Carnival
+25 02 2027
+05 03 2027
+1
+Rio de Janeiro
+Brazil
+2200
+0
+1
+23
+Nordic Lights
+15 12 2024
+22 12 2024
+2
+Tromso
+Norway
+1800
+1
+Oslo
+Norway
+1200
+1
+1
+24
+Hawaii Honeymoon
+10 06 2026
+20 06 2026
+2
+Honolulu
+USA
+2500
+0
+Maui
+USA
+3000
+0
+1
+25
+Barcelona Art
+12 07 2023
+18 07 2023
+1
+Barcelona
+Spain
+900
+1
+0
+26
+Turkish Delights
+01 10 2025
+10 10 2025
+2
+Istanbul
+Turkey
+700
+1
+Cappadocia
+Turkey
+600
+1
+1
+27
+Maldives Luxury
+05 01 2027
+12 01 2027
+1
+Male
+Maldives
+5000
+0
+1
+28
+Prague Winter
+01 12 2023
+05 12 2023
+1
+Prague
+Czech Republic
+500
+1
+0
+29
+Mexican Tacos
+15 03 2026
+22 03 2026
+1
+Mexico City
+Mexico
+600
+0
+0
+30
+New Zealand Roadtrip
+01 02 2027
+15 02 2027
+2
+Auckland
+New Zealand
+1500
+0
+Queenstown
+New Zealand
+1800
+0
+1

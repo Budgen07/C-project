@@ -1,14 +1,20 @@
 #include <stdio.h>
-#include "itinerary.h"
+#include "common.h"
+#include "utils.h"
+#include "storage.h"
+#include "manager.h"
+
+// Define Globals Here
+Itinerary itineraries[MAX_ITINERARIES];
+int count = 0;
+int next_id = 1;
 
 int main() {
     int choice;
-
     loadData();
 
     while (1) {
         clearScreen();
-        // New Vibrant Header
         printf(MAGENTA "=================================================\n" RESET);
         printf(CYAN    "          TRAVEL ITINERARY PLANNER v2.0          \n" RESET);
         printf(MAGENTA "=================================================\n" RESET);
@@ -24,8 +30,8 @@ int main() {
         printf(YELLOW " 9." RESET "  View Favorite Trips\n");
         printf(GREEN "10." RESET "  Toggle Favorite\n");
         printf(MAGENTA "11." RESET "  Export to File\n");
-        printf(YELLOW "12." RESET "  City Stats (Visited/Upcoming)\n"); // New Option
-        printf(RED    "13." RESET "  Reset ALL itineraries (danger!)\n"); // Reset option
+        printf(YELLOW "12." RESET "  City Stats (Visited/Upcoming)\n");
+        printf(RED    "13." RESET "  Reset ALL itineraries (danger!)\n");
         printf(WHITE  " 0." RESET "  Exit\n");
         printf(MAGENTA "-------------------------------------------------\n" RESET);
         printf(BLUE "Enter choice: " RESET);
@@ -44,8 +50,8 @@ int main() {
             case 9: listFavorites(); pauseScreen(); break;
             case 10: toggleFavorite(); pauseScreen(); break;
             case 11: exportItinerary(); pauseScreen(); break;
-            case 12: viewCityStats(); pauseScreen(); break; // New Call
-            case 13: resetAllItineraries(); pauseScreen(); break; // Reset
+            case 12: viewCityStats(); pauseScreen(); break;
+            case 13: resetAllItineraries(); pauseScreen(); break;
             case 0:
                 printf(GREEN "\nGoodbye! Safe travels.\n" RESET);
                 return 0;
@@ -54,6 +60,5 @@ int main() {
                 pauseScreen();
         }
     }
-
     return 0;
 }
