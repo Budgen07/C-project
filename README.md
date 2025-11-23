@@ -244,20 +244,6 @@ Everything follows strict syllabus guidelines.
 
 ---
 
-## 🚀 Possible Future Enhancements (Optional)
-These are not included but can be extended:
-
-- Dynamic memory allocation  
-- Unlimited stops  
-- Unlimited itineraries  
-- Undo/Redo  
-- CSV/JSON exports  
-- CLI calendar view  
-- Login system / multi-user support  
-- Template-based itinerary creation  
-
----
-
 ## 🏁 Final Notes
 
 This project demonstrates:
